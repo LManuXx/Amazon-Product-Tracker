@@ -64,7 +64,13 @@ def main():
     start_scheduler()
 
     # Iniciar el bot
-    application.run_polling()
+    application.run_webhook(
+    listen="0.0.0.0",
+    port=5000,
+    url_path="",
+    webhook_url=f"https://dashboard.render.com/web/srv-ctnid3lsvqrc73b1nlg0/deploys/dep-ctniea5umphs73c73vqg"  # Reemplaza con la URL de tu Render App
+)
+
 
 if __name__ == "__main__":
     main()
