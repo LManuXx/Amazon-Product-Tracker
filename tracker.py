@@ -7,6 +7,8 @@ from threading import Thread
 from database import init_db
 from price_checker import check_prices
 from telegram.ext import CallbackQueryHandler
+from commands import handle_user_input
+from telegram.ext import MessageHandler, filters
 
 # Cargar variables de entorno
 load_dotenv()
@@ -54,6 +56,7 @@ def main():
     application.add_handler(CommandHandler("history", show_history))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CallbackQueryHandler(menu_handler))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_input))
     
 
 
