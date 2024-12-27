@@ -68,7 +68,7 @@ def main():
     listen="0.0.0.0",
     port=5000,
     url_path="",
-    webhook_url=f"https://dashboard.render.com/web/srv-ctnid3lsvqrc73b1nlg0/deploys/dep-ctniea5umphs73c73vqg"  # Reemplaza con la URL de tu Render App
+    webhook_url=f"https://amazon-product-tracker.onrender.com"  # Reemplaza con la URL de tu Render App
 )
 
 
