@@ -10,7 +10,8 @@ from database import add_user, add_product, get_products, remove_product, get_pr
 import matplotlib.pyplot as plt
 import os
 import time
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+
 
 
 # Función para el comando /help
@@ -180,3 +181,63 @@ async def button_handler(update, context):
             )
         else:
             await query.edit_message_text("El producto seleccionado no es válido.")
+
+async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        [InlineKeyboardButton("➕ Añadir Producto", callback_data="add_product")],
+        [InlineKeyboardButton("📜 Ver Productos", callback_data="list_products")],
+        [InlineKeyboardButton("🔎 Consultar Precio", callback_data="check_price")],
+        [InlineKeyboardButton("🗑️ Eliminar Producto", callback_data="remove_product")],
+        [InlineKeyboardButton("📈 Historial de Precios", callback_data="price_history")],
+        [InlineKeyboardButton("ℹ️ Ayuda", callback_data="help")],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    if update.message:
+        await update.message.reply_text("Selecciona una acción:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.edit_message_text("Selecciona una acción:", reply_markup=reply_markup)
+
+async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    # Procesar la acción seleccionada
+    action = query.data
+
+    if action == "add_product":
+        await query.edit_message_text("Usa el comando /add <URL> para añadir un producto.")
+    elif action == "list_products":
+        await list_urls(update, context)  # Reutiliza la función existente
+    elif action == "check_price":
+        await query.edit_message_text("Usa el comando /checkprice <URL> para consultar el precio de un producto.")
+    elif action == "remove_product":
+        await query.edit_message_text("Usa el comando /remove <número> para eliminar un producto.")
+    elif action == "price_history":
+        await query.edit_message_text("Usa el comando /history <URL> para ver el historial de precios.")
+    elif action == "help":
+        await help_command(update, context)  # Reutiliza la función de ayuda
+    elif action.startswith("product_"):
+        product_index = int(action.split("_")[1]) - 1
+        user_id = query.message.chat_id
+        products = get_products(user_id)
+
+        if 0 <= product_index < len(products):
+            url, name, price = products[product_index]
+            await query.edit_message_text(
+                f"Producto seleccionado:\n\n"
+                f"*Nombre:* {name}\n"
+                f"*Precio actual:* {price}\n"
+                f"*URL:* [Enlace]({url})",
+                parse_mode="Markdown"
+            )
+        else:
+            await query.edit_message_text("El producto seleccionado no es válido.")
+    else:
+        await query.edit_message_text("Acción no reconocida.")
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("¡Hola! Bienvenido al Price Tracker Bot.")
+    await show_menu(update, context)
