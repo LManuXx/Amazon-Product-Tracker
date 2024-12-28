@@ -7,13 +7,20 @@ user_states = {}
 
 
 def is_valid_amazon_url(url: str) -> bool:
-    if not re.match(r"^https?://(www\\.)?amazon\\.[a-z]{2,3}(/.*)?$", url):
-        return False
-    try:
-        response = requests.head(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
+    """
+    Valida si la URL proporcionada pertenece a Amazon y tiene un formato válido.
+    
+    Args:
+        url (str): La URL a validar.
+    
+    Returns:
+        bool: True si la URL es válida, False de lo contrario.
+    """
+    amazon_regex = re.compile(
+        r'^https?:\/\/(www\.)?(amazon\.[a-z]{2,3}(\.[a-z]{2,3})?\/)'
+        r'.+\/(dp|gp\/product)\/[A-Z0-9]{10}'
+    )
+    return bool(amazon_regex.match(url))
 
 
 def is_valid_index(index: str, max_index: int) -> bool:
