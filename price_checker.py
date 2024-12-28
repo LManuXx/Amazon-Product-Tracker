@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from database import record_price_change, get_product_id, get_last_price, get_all_products
 from asyncio import Semaphore
+from utils import escape_markdown_v2
 
 # Cargar variables de entorno
 load_dotenv()
@@ -29,22 +30,27 @@ async def check_prices():
                 product_name, current_price = get_product_info(url)
                 last_price = get_last_price(product_id)
 
+                # Registrar el precio si no hay un historial previo
                 if not last_price:
-                    last_price = "999,99 €"
+                    last_price = "999,99 €"  # Valor por defecto
                     record_price_change(product_id, last_price)
 
+                # Comparar precios y notificar al usuario si hay un cambio
                 if current_price != last_price:
                     record_price_change(product_id, current_price)
+
+                    # Construir el mensaje y escaparlo
+                    message = (
+                        f"El precio del producto ha cambiado:\n"
+                        f"[{product_name}]({url})\n"
+                        f"**Nuevo precio:** {current_price}\n"
+                        f"**Precio anterior:** {last_price}"
+                    )
                     await bot.send_message(
                         chat_id=user_id,
-                        text=(
-                            f"El precio del producto ha cambiado:\n"
-                            f"[{product_name}]({url})\n"
-                            f"**Nuevo precio:** {current_price}\n"
-                            f"**Precio anterior:** {last_price}"
-                        ),
+                        text=escape_markdown_v2(message),
                         parse_mode="MarkdownV2"
                     )
             except Exception as e:
-                print(f"Error al procesar el producto {name}: {e}")
-
+                # Mejor manejo de errores con logging
+                print(f"Error al procesar el producto '{name}' con ID {product_id}: {e}")

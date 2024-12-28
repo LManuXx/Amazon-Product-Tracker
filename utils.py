@@ -22,3 +22,17 @@ def is_valid_index(index: str, max_index: int) -> bool:
         return False
     index = int(index)
     return 0 <= index < max_index
+
+def escape_markdown_v2(text: str) -> str:
+    """
+    Escapa caracteres reservados en MarkdownV2.
+
+    Args:
+        text (str): Texto a escapar.
+
+    Returns:
+        str: Texto escapado.
+    """
+    escape_chars = r"_*[]()~`>#+-=|{}.!"
+    return ''.join(f"\\{char}" if char in escape_chars else char for char in text)
+
