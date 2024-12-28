@@ -15,6 +15,7 @@ load_dotenv()
 
 # Leer el token del archivo .env
 TOKEN = os.getenv("TOKEN")
+PORT = int(os.environ.get("PORT", 8443))  # Puerto asignado por Render
 
 if not TOKEN:
     raise ValueError("El token no está configurado en el archivo .env")
@@ -59,20 +60,17 @@ def main():
 
     application.add_handler(CallbackQueryHandler(menu_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_input))
-    
-
 
     # Iniciar el scheduler en un hilo separado
     start_scheduler()
 
-    # Iniciar el bot
+    # Iniciar el bot con Webhook
     application.run_webhook(
-    listen="0.0.0.0",
-    port=5000,
-    url_path="",
-    webhook_url=f"https://amazon-product-tracker.onrender.com"  # Reemplaza con la URL de tu Render App
-)
-
+        listen="0.0.0.0",
+        port=PORT,
+        url_path="webhook",  # Ruta del webhook
+        webhook_url=f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"  # Render asigna esta URL dinámicamente
+    )
 
 if __name__ == "__main__":
     main()
