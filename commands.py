@@ -1,9 +1,8 @@
-# commands.py
 import matplotlib
 matplotlib.use('Agg') 
 from telegram import Update
 from telegram.ext import ContextTypes
-from utils import is_valid_amazon_url
+from utils import is_valid_amazon_url, is_valid_index
 from price_tracker import get_price
 from price_tracker import get_product_info
 from database import add_user, add_product, get_products, remove_product, get_price_history
@@ -12,6 +11,8 @@ import os
 import time
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from utils import user_states
+import logging
+from telegram.error import TelegramError
 
 
 
@@ -19,29 +20,29 @@ from utils import user_states
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     help_text = (
         "📖 *Comandos disponibles:*\n"
-        "/start - Iniciar el bot\n"
-        "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
-        "/list - Mostrar la lista de productos monitoreados\n"
-        "/checkprice <URL> - Consultar el precio actual de un producto\n"
-        "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
-        "/history <URL> - Ver el historial de precios de un producto\n"
-        "/help - Mostrar este mensaje de ayuda\n"
+        "/start \- Iniciar el bot\n"
+        "/add \<URL\> \- Añadir una URL de Amazon para monitorear precios\n"
+        "/list \- Mostrar la lista de productos monitoreados\n"
+        "/checkprice \<URL\> \- Consultar el precio actual de un producto\n"
+        "/remove \<número\> \- Eliminar un producto monitoreado por su número en /list\n"
+        "/history \<URL\> \- Ver el historial de precios de un producto\n"
+        "/help \- Mostrar este mensaje de ayuda\n"
     )
-    await update.message.reply_text(help_text, parse_mode="Markdown")
+    await update.message.reply_text(help_text, parse_mode="MarkdownV2")
 
 # Función para el comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('¡Hola, soy tu Price Tracker Bot! Usa /add <URL> para agregar una URL de Amazon y /list para ver tus productos.')
+    await update.message.reply_text('¡Hola, soy tu Price Tracker Bot! Usa /add \<URL\> para agregar una URL de Amazon y /list para ver tus productos.', parse_mode="MarkdownV2")
 
 # Función para el comando /add
 async def add_url(update, context):
     if not update.message or not context.args:
-        await update.message.reply_text("Por favor, proporciona una URL válida de Amazon después del comando /add.")
+        await update.message.reply_text("⚠️ Por favor, proporciona una URL válida de Amazon después del comando /add.", parse_mode="MarkdownV2")
         return
 
     url = context.args[0]
     if not is_valid_amazon_url(url):
-        await update.message.reply_text("La URL proporcionada no es válida para Amazon.")
+        await update.message.reply_text("⚠️ La URL proporcionada no es válida para Amazon.", parse_mode="MarkdownV2")
         return
 
     user_id = update.message.chat_id
@@ -49,7 +50,8 @@ async def add_url(update, context):
     add_user(user_id)
     add_product(user_id, url, product_name, product_price)
 
-    await update.message.reply_text(f"Producto añadido: {product_name} - {product_price}")
+    await update.message.reply_text(f"✅ Producto añadido: {product_name} \\- {product_price}", parse_mode="MarkdownV2")
+
 
 # Función para el comando /list
 async def list_urls(update, context):
@@ -60,70 +62,61 @@ async def list_urls(update, context):
 
     if not products:
         if update.callback_query:
-            await update.callback_query.edit_message_text('No tienes productos en seguimiento. Usa /add <URL> para añadir uno.')
+            await update.callback_query.edit_message_text('No tienes productos en seguimiento. Usa /add \<URL\> para añadir uno.', parse_mode="MarkdownV2")
         else:
-            await update.message.reply_text('No tienes productos en seguimiento. Usa /add <URL> para añadir uno.')
+            await update.message.reply_text('No tienes productos en seguimiento. Usa /add \<URL\> para añadir uno.', parse_mode="MarkdownV2")
         return
 
     # Crear mensaje con productos
     message = "Productos en seguimiento:\n"
     for index, (url, name, price) in enumerate(products, start=1):
-        message += f"{index}. [{name}]({url}) - {price}\n"
+        message += f"{index}\. \[{name}\]\({url}\) \- {price}\n"
 
     if update.callback_query:
-        await update.callback_query.edit_message_text(message, parse_mode="Markdown")
+        await update.callback_query.edit_message_text(message, parse_mode="MarkdownV2")
     else:
-        await update.message.reply_text(message, parse_mode="Markdown")
+        await update.message.reply_text(message, parse_mode="MarkdownV2")
 
 
 async def check_price(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text('Por favor, proporciona una URL después del comando /checkprice.')
+        await update.message.reply_text('Por favor, proporciona una URL después del comando /checkprice.', parse_mode="MarkdownV2")
         return
 
     url = context.args[0]
-    await update.message.reply_text('Extrayendo precio, por favor espera...')
+    await update.message.reply_text('Extrayendo precio, por favor espera...', parse_mode="MarkdownV2")
 
     # Llamar a la función para obtener el precio
     price = get_price(url)
-    await update.message.reply_text(f'El precio del producto es: {price}')
+    await update.message.reply_text(f'El precio del producto es: {price}', parse_mode="MarkdownV2")
 
 
 async def remove_url(update, context):
-    if not update.message:
-        return
-
-    if not context.args:
-        await update.message.reply_text('Por favor, proporciona el número del producto que deseas eliminar. Usa /list para ver tus productos.')
+    if not update.message or not context.args:
+        await update.message.reply_text("⚠️ Por favor, proporciona el número del producto que deseas eliminar.", parse_mode="MarkdownV2")
         return
 
     user_id = update.message.chat_id
     try:
-        # Obtener el número del producto desde el argumento
-        product_index = int(context.args[0]) - 1  # Ajustar índice para que comience en 0
+        product_index = context.args[0]
         products = get_products(user_id)
 
-        if not products:
-            await update.message.reply_text('No tienes productos en seguimiento. Usa /list para ver tus productos.')
+        if not is_valid_index(product_index, len(products)):
+            await update.message.reply_text("⚠️ El número proporcionado no es válido. Usa /list para ver tus productos.", parse_mode="MarkdownV2")
             return
 
-        # Verificar que el índice esté dentro del rango válido
-        if product_index < 0 or product_index >= len(products):
-            await update.message.reply_text('El número del producto no es válido. Usa /list para ver tus productos.')
-            return
-
-        # Obtener la URL del producto seleccionado
+        product_index = int(product_index)
         url_to_remove = products[product_index][0]
         remove_product(user_id, url_to_remove)
 
-        await update.message.reply_text(f'El producto "{products[product_index][1]}" ha sido eliminado del seguimiento.')  # Nombre del producto
-    except ValueError:
-        await update.message.reply_text('Por favor, proporciona un número válido.')
+        await update.message.reply_text(f"✅ El producto \"{products[product_index][1]}\" ha sido eliminado del seguimiento.", parse_mode="MarkdownV2")
+    except Exception as e:
+        await update.message.reply_text("⚠️ Ocurrió un error. Inténtalo de nuevo más tarde.", parse_mode="MarkdownV2")
 
 async def show_history(update, context):
     # Verificar si hay argumentos (URL) en el contexto
     if not context.args or len(context.args) == 0:
-        await update.message.reply_text("Por favor, proporciona la URL del producto. Ejemplo: /history <URL>")
+        await update.message.reply_text("Por favor, proporciona la URL del producto. Ejemplo: /history \<URL\>", parse_mode="MarkdownV2")
         return
 
     url = context.args[0]
@@ -132,7 +125,7 @@ async def show_history(update, context):
     # Obtener el historial de la base de datos
     history = get_price_history(user_id, url)
     if not history:
-        await update.message.reply_text("No se encontró historial de precios para este producto.")
+        await update.message.reply_text("No se encontró historial de precios para este producto.", parse_mode="MarkdownV2")
         return
 
     # Generar la gráfica
@@ -173,13 +166,13 @@ async def button_handler(update, context):
             url, name, price = products[product_index]
             await query.edit_message_text(
                 f"Producto seleccionado:\n\n"
-                f"*Nombre:* {name}\n"
-                f"*Precio actual:* {price}\n"
-                f"*URL:* [Enlace]({url})",
-                parse_mode="Markdown"
+                f"\*Nombre:\* {name}\n"
+                f"\*Precio actual:\* {price}\n"
+                f"\*URL:\* \[Enlace\]\({url}\)",
+                parse_mode="MarkdownV2"
             )
         else:
-            await query.edit_message_text("El producto seleccionado no es válido.")
+            await query.edit_message_text("El producto seleccionado no es válido.", parse_mode="MarkdownV2")
 
 async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
@@ -194,9 +187,9 @@ async def show_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     if update.message:
-        await update.message.reply_text("Selecciona una acción:", reply_markup=reply_markup)
+        await update.message.reply_text("Selecciona una acción:", reply_markup=reply_markup, parse_mode="MarkdownV2")
     elif update.callback_query:
-        await update.callback_query.edit_message_text("Selecciona una acción:", reply_markup=reply_markup)
+        await update.callback_query.edit_message_text("Selecciona una acción:", reply_markup=reply_markup, parse_mode="MarkdownV2")
 
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -208,38 +201,38 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     if action == "add_product":
         user_states[user_id] = {"state": "waiting_for_url"}
-        await query.edit_message_text("Por favor, envía la URL del producto que deseas añadir.")
+        await query.edit_message_text("Por favor, envía la URL del producto que deseas añadir.", parse_mode="MarkdownV2")
     elif action == "list_products":
         await list_urls(update, context)  # Reutiliza la función existente
     elif action == "remove_product":
         user_states[user_id] = {"state": "waiting_for_remove"}
-        await query.edit_message_text("Por favor, envía el número del producto que deseas eliminar.")
+        await query.edit_message_text("Por favor, envía el número del producto que deseas eliminar.", parse_mode="MarkdownV2")
     elif action == "check_price":
         user_states[user_id] = {"state": "waiting_for_check"}
-        await query.edit_message_text("Por favor, envía la URL del producto para consultar el precio.")
+        await query.edit_message_text("Por favor, envía la URL del producto para consultar el precio.", parse_mode="MarkdownV2")
     elif action == "price_history":
         user_states[user_id] = {"state": "waiting_for_history"}
-        await query.edit_message_text("Por favor, envía la URL del producto para ver el historial de precios.")
+        await query.edit_message_text("Por favor, envía la URL del producto para ver el historial de precios.", parse_mode="MarkdownV2")
     elif action == "help":
         await query.edit_message_text(
             "📖 *Comandos disponibles:*\n"
-            "/start - Iniciar el bot\n"
-            "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
-            "/list - Mostrar la lista de productos monitoreados\n"
-            "/checkprice <URL> - Consultar el precio actual de un producto\n"
-            "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
-            "/history <URL> - Ver el historial de precios de un producto\n"
-            "/help - Mostrar este mensaje de ayuda\n",
-        parse_mode="Markdown"
+            "/start \- Iniciar el bot\n"
+            "/add \<URL\> \- Añadir una URL de Amazon para monitorear precios\n"
+            "/list \- Mostrar la lista de productos monitoreados\n"
+            "/checkprice \<URL\> \- Consultar el precio actual de un producto\n"
+            "/remove \<número\> \- Eliminar un producto monitoreado por su número en /list\n"
+            "/history \<URL\> \- Ver el historial de precios de un producto\n"
+            "/help \- Mostrar este mensaje de ayuda\n",
+        parse_mode="MarkdownV2"
     )
   # Reutiliza la función de ayuda
     else:
-        await query.edit_message_text("Acción no reconocida.")
+        await query.edit_message_text("Acción no reconocida.", parse_mode="MarkdownV2")
 
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("¡Hola! Bienvenido al Price Tracker Bot.")
+    await update.message.reply_text("¡Hola! Bienvenido al Price Tracker Bot.", parse_mode="MarkdownV2")
     await show_menu(update, context)
 
 async def handle_user_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -247,7 +240,7 @@ async def handle_user_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     user_input = update.message.text
 
     if user_id not in user_states or "state" not in user_states[user_id]:
-        await update.message.reply_text("Por favor, utiliza el menú para seleccionar una acción.")
+        await update.message.reply_text("Por favor, utiliza el menú para seleccionar una acción.", parse_mode="MarkdownV2")
         return
 
     state = user_states[user_id]["state"]
@@ -257,9 +250,9 @@ async def handle_user_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             product_name, product_price = get_product_info(user_input)
             add_user(user_id)
             add_product(user_id, user_input, product_name, product_price)
-            await update.message.reply_text(f"Producto añadido: {product_name} - {product_price}")
+            await update.message.reply_text(f"Producto añadido: {product_name} \- {product_price}", parse_mode="MarkdownV2")
         else:
-            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.")
+            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.", parse_mode="MarkdownV2")
         user_states.pop(user_id)  # Limpia el estado del usuario
 
     elif state == "waiting_for_remove":
@@ -269,29 +262,47 @@ async def handle_user_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             if 0 <= product_index < len(products):
                 url_to_remove = products[product_index][0]
                 remove_product(user_id, url_to_remove)
-                await update.message.reply_text(f'El producto "{products[product_index][1]}" ha sido eliminado del seguimiento.')
+                await update.message.reply_text(f'El producto "{products[product_index][1]}" ha sido eliminado del seguimiento.', parse_mode="MarkdownV2")
             else:
-                await update.message.reply_text("El número proporcionado no es válido.")
+                await update.message.reply_text("El número proporcionado no es válido.", parse_mode="MarkdownV2")
         except ValueError:
-            await update.message.reply_text("Por favor, proporciona un número válido.")
+            await update.message.reply_text("Por favor, proporciona un número válido.", parse_mode="MarkdownV2")
         user_states.pop(user_id)  # Limpia el estado del usuario
 
     elif state == "waiting_for_check":
         if is_valid_amazon_url(user_input):
             price = get_price(user_input)
-            await update.message.reply_text(f'El precio del producto es: {price}')
+            await update.message.reply_text(f'El precio del producto es: {price}', parse_mode="MarkdownV2")
         else:
-            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.")
+            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.", parse_mode="MarkdownV2")
         user_states.pop(user_id)
 
     elif state == "waiting_for_history":
         if is_valid_amazon_url(user_input):
-            await update.message.reply_text("Generando el historial de precios, por favor espera...")
+            await update.message.reply_text("Generando el historial de precios, por favor espera...", parse_mode="MarkdownV2")
             context.args = [user_input]
             await show_history(update, context)  # Reutiliza la función existente
         else:
-            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.")
+            await update.message.reply_text("La URL proporcionada no es válida. Inténtalo de nuevo.", parse_mode="MarkdownV2")
         user_states.pop(user_id)  # Limpia el estado del usuario
 
     else:
-        await update.message.reply_text("Acción no reconocida. Por favor, utiliza el menú para empezar.")
+        await update.message.reply_text("Acción no reconocida. Por favor, utiliza el menú para empezar.", parse_mode="MarkdownV2")
+
+# Configurar logs para capturar errores
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Captura errores inesperados."""
+    logger.error(msg="Ocurrió un error con la actualización:", exc_info=context.error)
+    try:
+        if update and hasattr(update, 'message') and update.message:
+            await update.message.reply_text("⚠️ Ocurrió un error. Por favor, inténtalo de nuevo más tarde.")
+        elif update and hasattr(update, 'callback_query') and update.callback_query:
+            await update.callback_query.edit_message_text("⚠️ Ocurrió un error. Por favor, inténtalo de nuevo más tarde.")
+    except TelegramError as e:
+        logger.error(f"Error al enviar mensaje de error: {e}")

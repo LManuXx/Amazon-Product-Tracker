@@ -1,5 +1,5 @@
 from telegram.ext import Application, CommandHandler
-from commands import start, add_url, list_urls, check_price, remove_url, show_history, help_command, button_handler, menu_handler
+from commands import start, add_url, list_urls, check_price, remove_url, show_history, help_command, button_handler, menu_handler, error_handler
 from dotenv import load_dotenv
 import os
 import asyncio
@@ -55,6 +55,8 @@ def main():
     application.add_handler(CommandHandler("remove", remove_url))
     application.add_handler(CommandHandler("history", show_history))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_error_handler(error_handler)
+
     application.add_handler(CallbackQueryHandler(menu_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_input))
     

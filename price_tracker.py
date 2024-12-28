@@ -1,10 +1,27 @@
 import requests
 from bs4 import BeautifulSoup
+import time
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
 }
+
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # segundos
+
+def fetch_with_retries(url: str, headers: dict) -> str:
+    """Realiza una solicitud HTTP con reintentos en caso de error."""
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.RequestException as e:
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+            else:
+                raise e
 
 def get_price(url: str) -> str:
     """
@@ -17,12 +34,11 @@ def get_price(url: str) -> str:
         str: El precio del producto como texto. Si no se encuentra, devuelve un mensaje de error.
     """
     try:
-        # Hacer la solicitud HTTP
-        response = requests.get(url, headers=HEADERS)
-        response.raise_for_status()
+        # Hacer la solicitud HTTP con reintentos
+        html = fetch_with_retries(url, HEADERS)
         
         # Parsear el HTML con BeautifulSoup
-        soup = BeautifulSoup(response.text, "lxml")
+        soup = BeautifulSoup(html, "lxml")
         
         # Extraer la parte entera y fraccionaria del precio
         whole_price = soup.select_one("span.a-price-whole")
@@ -38,7 +54,9 @@ def get_price(url: str) -> str:
         return "No se pudo encontrar el precio en esta página."
     except requests.exceptions.RequestException as e:
         return f"Error al conectar con Amazon: {e}"
-    
+    except Exception as e:
+        return f"Error inesperado: {e}"
+
 def get_product_info(url: str) -> tuple:
     """
     Extrae el nombre y el precio de un producto de Amazon.
@@ -50,9 +68,9 @@ def get_product_info(url: str) -> tuple:
         tuple: (nombre del producto, precio del producto). Si no se encuentra, devuelve mensajes de error.
     """
     try:
-        response = requests.get(url, headers=HEADERS)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "lxml")
+        # Hacer la solicitud HTTP con reintentos
+        html = fetch_with_retries(url, HEADERS)
+        soup = BeautifulSoup(html, "lxml")
 
         # Extraer nombre del producto
         title_element = soup.find("span", id="productTitle")
@@ -69,3 +87,5 @@ def get_product_info(url: str) -> tuple:
         return product_name, price
     except requests.exceptions.RequestException as e:
         return "Error al conectar con Amazon", str(e)
+    except Exception as e:
+        return "Error inesperado", str(e)
