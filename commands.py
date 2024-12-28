@@ -20,19 +20,15 @@ from telegram.error import TelegramError
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     help_text = (
         "📖 *Comandos disponibles:*\n"
-        "/start \- Iniciar el bot\n"
-        "/add \<URL\> \- Añadir una URL de Amazon para monitorear precios\n"
-        "/list \- Mostrar la lista de productos monitoreados\n"
-        "/checkprice \<URL\> \- Consultar el precio actual de un producto\n"
-        "/remove \<número\> \- Eliminar un producto monitoreado por su número en /list\n"
-        "/history \<URL\> \- Ver el historial de precios de un producto\n"
-        "/help \- Mostrar este mensaje de ayuda\n"
+        "/start - Iniciar el bot\n"
+        "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
+        "/list - Mostrar la lista de productos monitoreados\n"
+        "/checkprice <URL> - Consultar el precio actual de un producto\n"
+        "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
+        "/history <URL> \- Ver el historial de precios de un producto\n"
+        "/help - Mostrar este mensaje de ayuda\n"
     )
     await update.message.reply_text(escape_markdown_v2(help_text), parse_mode="MarkdownV2")
-
-# Función para el comando /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('¡Hola, soy tu Price Tracker Bot! Usa /add \<URL\> para agregar una URL de Amazon y /list para ver tus productos.', parse_mode="MarkdownV2")
 
 # Función para el comando /add
 async def add_url(update, context):
@@ -61,7 +57,7 @@ async def list_urls(update, context):
     products = get_products(user_id)
 
     if not products:
-        message = "No tienes productos en seguimiento. Usa /add \<URL\> para añadir uno."
+        message = "No tienes productos en seguimiento. Usa /add <URL> para añadir uno."
         if update.callback_query:
             await update.callback_query.edit_message_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
         else:
@@ -117,7 +113,7 @@ async def remove_url(update, context):
 
 async def show_history(update, context):
     if not context.args or len(context.args) == 0:
-        await update.message.reply_text(escape_markdown_v2("⚠️ Por favor, proporciona la URL del producto. Ejemplo: /history \<URL\>"), parse_mode="MarkdownV2")
+        await update.message.reply_text(escape_markdown_v2("⚠️ Por favor, proporciona la URL del producto. Ejemplo: /history <URL>"), parse_mode="MarkdownV2")
         return
 
     url = context.args[0]
@@ -214,13 +210,13 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await query.edit_message_text(
             escape_markdown_v2(
                 "📖 *Comandos disponibles:*\n"
-                "/start \- Iniciar el bot\n"
-                "/add \<URL\> \- Añadir una URL de Amazon para monitorear precios\n"
-                "/list \- Mostrar la lista de productos monitoreados\n"
-                "/checkprice \<URL\> \- Consultar el precio actual de un producto\n"
-                "/remove \<número\> \- Eliminar un producto monitoreado por su número en /list\n"
-                "/history \<URL\> \- Ver el historial de precios de un producto\n"
-                "/help \- Mostrar este mensaje de ayuda\n"
+                "/start - Iniciar el bot\n"
+                "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
+                "/list - Mostrar la lista de productos monitoreados\n"
+                "/checkprice <URL> - Consultar el precio actual de un producto\n"
+                "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
+                "/history <URL> - Ver el historial de precios de un producto\n"
+                "/help - Mostrar este mensaje de ayuda\n"
             ),
             parse_mode="MarkdownV2"
         )
