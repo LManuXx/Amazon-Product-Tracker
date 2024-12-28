@@ -2,6 +2,10 @@ import re
 
 import requests
 
+# Diccionario para almacenar el estado de cada usuario
+user_states = {}
+
+
 def is_valid_amazon_url(url: str) -> bool:
     if not re.match(r"^https?://(www\\.)?amazon\\.[a-z]{2,3}(/.*)?$", url):
         return False
