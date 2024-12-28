@@ -20,13 +20,13 @@ from telegram.error import TelegramError
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     help_text = (
         "📖 *Comandos disponibles:*\n"
-        "/start - Iniciar el bot\n"
-        "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
-        "/list - Mostrar la lista de productos monitoreados\n"
-        "/checkprice <URL> - Consultar el precio actual de un producto\n"
-        "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
-        "/history <URL> \- Ver el historial de precios de un producto\n"
-        "/help - Mostrar este mensaje de ayuda\n"
+        "/start  Iniciar el bot\n"
+        "/add <URL>  Añadir una URL de Amazon para monitorear precios\n"
+        "/list  Mostrar la lista de productos monitoreados\n"
+        "/checkprice <URL>  Consultar el precio actual de un producto\n"
+        "/remove <número>  Eliminar un producto monitoreado por su número en /list\n"
+        "/history <URL> Ver el historial de precios de un producto\n"
+        "/help  Mostrar este mensaje de ayuda\n"
     )
     await update.message.reply_text(escape_markdown_v2(help_text), parse_mode="MarkdownV2")
 
@@ -46,7 +46,7 @@ async def add_url(update, context):
     add_user(user_id)
     add_product(user_id, url, product_name, product_price)
 
-    message = f"✅ Producto añadido: {product_name} \- {product_price}"
+    message = f"✅ Producto añadido: {product_name}  {product_price}"
     await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
 
 # Función para el comando /list
@@ -67,7 +67,7 @@ async def list_urls(update, context):
     # Crear mensaje con productos
     message = "Productos en seguimiento:\n"
     for index, (url, name, price) in enumerate(products, start=1):
-        message += f"{index}\. \[{name}\]\({url}\) \- {price}\n"
+        message += f"{index}\. \[{name}\]\({url}\) \ {price}\n"
 
     if update.callback_query:
         await update.callback_query.edit_message_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
@@ -210,13 +210,13 @@ async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await query.edit_message_text(
             escape_markdown_v2(
                 "📖 *Comandos disponibles:*\n"
-                "/start - Iniciar el bot\n"
-                "/add <URL> - Añadir una URL de Amazon para monitorear precios\n"
-                "/list - Mostrar la lista de productos monitoreados\n"
-                "/checkprice <URL> - Consultar el precio actual de un producto\n"
-                "/remove <número> - Eliminar un producto monitoreado por su número en /list\n"
-                "/history <URL> - Ver el historial de precios de un producto\n"
-                "/help - Mostrar este mensaje de ayuda\n"
+                "/start  Iniciar el bot\n"
+                "/add <URL>  Añadir una URL de Amazon para monitorear precios\n"
+                "/list  Mostrar la lista de productos monitoreados\n"
+                "/checkprice <URL>  Consultar el precio actual de un producto\n"
+                "/remove <número>  Eliminar un producto monitoreado por su número en /list\n"
+                "/history <URL>  Ver el historial de precios de un producto\n"
+                "/help  Mostrar este mensaje de ayuda\n"
             ),
             parse_mode="MarkdownV2"
         )
@@ -242,7 +242,7 @@ async def handle_user_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             product_name, product_price = get_product_info(user_input)
             add_user(user_id)
             add_product(user_id, user_input, product_name, product_price)
-            await update.message.reply_text(escape_markdown_v2(f"Producto añadido: {product_name} \- {product_price}"), parse_mode="MarkdownV2")
+            await update.message.reply_text(escape_markdown_v2(f"Producto añadido: {product_name}  {product_price}"), parse_mode="MarkdownV2")
         else:
             await update.message.reply_text(escape_markdown_v2("La URL proporcionada no es válida. Inténtalo de nuevo."), parse_mode="MarkdownV2")
         user_states.pop(user_id)  # Limpia el estado del usuario
