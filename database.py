@@ -1,4 +1,7 @@
 import sqlite3
+from logger import config_logger
+
+logger = config_logger(__name__)
 
 # Nombre del archivo de la base de datos
 DB_NAME = "tracker.db"
@@ -159,4 +162,5 @@ def get_all_products():
             return cursor.fetchall()
     except sqlite3.Error as e:
         print(f"Error al obtener todos los productos: {e}")
+        logger.error(f"Error al obtener todos los productos: {e}")
         return []
