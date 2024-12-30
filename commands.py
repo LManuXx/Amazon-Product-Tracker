@@ -74,7 +74,8 @@ async def list_urls(update, context):
         #escaped_url = escape_markdown_v2(url or "URL no disponible")
         escaped_price = escape_markdown_v2(price or "Precio no disponible")
         message += f"{index} {escaped_name} {escaped_price}\n"
-        await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
+    
+    await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
 
 
 
@@ -292,13 +293,4 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Captura errores inesperados."""
-    logger.error(msg="Ocurrió un error con la actualización:", exc_info=context.error)
-    try:
-        if update and hasattr(update, 'message') and update.message:
-            await update.message.reply_text(escape_markdown_v2("⚠️ Ocurrió un error. Por favor, inténtalo de nuevo más tarde."))
-        elif update and hasattr(update, 'callback_query') and update.callback_query:
-            await update.callback_query.edit_message_text(escape_markdown_v2("⚠️ Ocurrió un error. Por favor, inténtalo de nuevo más tarde."))
-    except TelegramError as e:
-        logger.error(f"Error al enviar mensaje de error: {e}")
+
