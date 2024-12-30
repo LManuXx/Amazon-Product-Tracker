@@ -217,3 +217,23 @@ def get_all_products():
         with conn.cursor() as cursor:
             cursor.execute("SELECT id, user_id, url, name FROM products")
             return cursor.fetchall()
+        
+@handle_db_errors
+def get_product_id(user_id, url):
+    """
+    Obtiene el ID de un producto basado en el usuario y la URL.
+
+    Args:
+        user_id (int): ID del usuario.
+        url (str): URL del producto.
+
+    Returns:
+        int: ID del producto, o None si no existe.
+    """
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+            SELECT id FROM products WHERE user_id = %s AND url = %s
+            """, (user_id, url))
+            result = cursor.fetchone()
+            return result["id"] if result else None
