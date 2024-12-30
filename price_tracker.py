@@ -8,12 +8,15 @@ from logger import config_logger
 logger = config_logger()
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.110 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
 }
 
-MAX_RETRIES = 3
-RETRY_DELAY = 5  # segundos
+
+MAX_RETRIES = 5
+RETRY_DELAY = 20  # segundos
 
 def fetch_with_retries(url: str, headers: dict) -> str:
     """Realiza una solicitud HTTP con reintentos en caso de error."""

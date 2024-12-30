@@ -37,9 +37,9 @@ async def check_prices():
                     # Construir el mensaje y escaparlo
                     message = (
                         f"El precio del producto ha cambiado:\n"
-                        f"[{product_name}]({url})\n"
-                        f"**Nuevo precio:** {current_price}\n"
-                        f"**Precio anterior:** {last_price}"
+                        f"{product_name}\n"
+                        f"Nuevo precio: {current_price}\n"
+                        f"Precio anterior: {last_price}"
                     )
                     await bot.send_message(
                         chat_id=user_id,
