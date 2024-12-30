@@ -55,13 +55,24 @@ def add_product(user_id, url, name=None, price=None):
     try:
         with sqlite3.connect(DB_NAME) as conn:
             cursor = conn.cursor()
+            # Insertar el producto en la tabla products
             cursor.execute("""
             INSERT INTO products (user_id, url, name, price)
             VALUES (?, ?, ?, ?)
             """, (user_id, url, name, price))
+            product_id = cursor.lastrowid
+
+            # Insertar el precio inicial en price_history
+            if price:
+                cursor.execute("""
+                INSERT INTO price_history (product_id, price)
+                VALUES (?, ?)
+                """, (product_id, price))
+            
             conn.commit()
     except sqlite3.Error as e:
         print(f"Error al añadir producto para el usuario {user_id}: {e}")
+
 
 # Obtener los productos de un usuario
 def get_products(user_id):

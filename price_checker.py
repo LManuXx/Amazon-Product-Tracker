@@ -30,6 +30,10 @@ async def check_prices():
                 product_name, current_price = get_product_info(url)
                 last_price = get_last_price(product_id)
 
+                if last_price is None:
+                    record_price_change(product_id, current_price)
+                    continue
+
                 # Comparar precios y notificar al usuario si hay un cambio
                 if current_price != last_price:
                     record_price_change(product_id, current_price)
