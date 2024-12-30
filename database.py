@@ -1,7 +1,7 @@
 import sqlite3
 from logger import config_logger
 
-logger = config_logger(__name__)
+logger = config_logger()
 
 # Nombre del archivo de la base de datos
 DB_NAME = "tracker.db"
