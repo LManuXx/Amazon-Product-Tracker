@@ -74,10 +74,6 @@ async def list_urls(update, context):
         #escaped_url = escape_markdown_v2(url or "URL no disponible")
         escaped_price = escape_markdown_v2(price or "Precio no disponible")
         message += f"{index} {escaped_name} {escaped_price}\n"
-
-    if update.callback_query:
-        await update.callback_query.edit_message_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
-    else:
         await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
 
 
