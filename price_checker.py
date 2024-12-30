@@ -30,11 +30,6 @@ async def check_prices():
                 product_name, current_price = get_product_info(url)
                 last_price = get_last_price(product_id)
 
-                # Registrar el precio si no hay un historial previo
-                if not last_price:
-                    last_price = "999,99 €"  # Valor por defecto
-                    record_price_change(product_id, last_price)
-
                 # Comparar precios y notificar al usuario si hay un cambio
                 if current_price != last_price:
                     record_price_change(product_id, current_price)

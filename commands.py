@@ -67,7 +67,8 @@ async def list_urls(update, context):
     # Crear mensaje con productos
     message = "Productos en seguimiento:\n"
     for index, (url, name, price) in enumerate(products, start=1):
-        message += f"{index}\. \[{name}\]\({url}\) \ {price}\n"
+        message += f"{index}\. \[{name}\]\({url}\) {price}\n"
+
 
     if update.callback_query:
         await update.callback_query.edit_message_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
@@ -106,7 +107,8 @@ async def remove_url(update, context):
         url_to_remove = products[product_index][0]
         remove_product(user_id, url_to_remove)
 
-        message = f"✅ El producto \"{products[product_index][1]}\" ha sido eliminado del seguimiento."
+        message = f"✅ El producto '{products[product_index][1]}' ha sido eliminado del seguimiento."
+
         await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
     except Exception:
         await update.message.reply_text(escape_markdown_v2("⚠️ Ocurrió un error. Inténtalo de nuevo más tarde."), parse_mode="MarkdownV2")

@@ -40,6 +40,7 @@ def escape_markdown_v2(text: str) -> str:
     Returns:
         str: Texto escapado.
     """
-    escape_chars = r"_*[]()~`>#+-=|{}.!-<>%&"
+    escape_chars = r"_*[]()~`>#+-=|{}.!" 
     return ''.join(f"\\{char}" if char in escape_chars else char for char in text)
+
 
