@@ -107,7 +107,7 @@ async def remove_url(update, context):
             return
 
         product_index = int(product_index)
-        url_to_remove = products[product_index][0]
+        url_to_remove = products[product_index+1][0]
         remove_product(user_id, url_to_remove)
 
         message = f"✅ El producto '{products[product_index][1]}' ha sido eliminado del seguimiento."
