@@ -67,13 +67,16 @@ async def list_urls(update, context):
     # Crear mensaje con productos
     message = "Productos en seguimiento:\n"
     for index, (url, name, price) in enumerate(products, start=1):
-        message += f"{index}\. \[{name}\]\({url}\) {price}\n"
-
+        escaped_name = escape_markdown_v2(name or "Nombre no disponible")
+        escaped_url = escape_markdown_v2(url or "URL no disponible")
+        escaped_price = escape_markdown_v2(price or "Precio no disponible")
+        message += f"{index}. [{escaped_name}]({escaped_url}) - {escaped_price}\n"
 
     if update.callback_query:
         await update.callback_query.edit_message_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
     else:
         await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
+
 
 
 async def check_price(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
