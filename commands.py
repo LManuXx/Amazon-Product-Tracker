@@ -13,8 +13,9 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from utils import user_states
 import logging
 from telegram.error import TelegramError
+from logger import config_logger
 
-
+logger = config_logger()
 
 # Función para el comando /help
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -55,6 +56,8 @@ async def list_urls(update, context):
         update.callback_query.message.chat_id if update.callback_query else update.message.chat_id
     )
     products = get_products(user_id)
+    logger.info(f"Productos de {user_id}: {products}")
+
 
     if not products:
         message = "No tienes productos en seguimiento. Usa /add <URL> para añadir uno."

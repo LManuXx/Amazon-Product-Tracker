@@ -43,4 +43,10 @@ def escape_markdown_v2(text: str) -> str:
     escape_chars = r"_*[]()~`>#+-=|{}.!" 
     return ''.join(f"\\{char}" if char in escape_chars else char for char in text)
 
+def simplify_amazon_url(url: str) -> str:
+    if "/dp/" in url:
+        return url.split("/dp/")[0] + "/dp/" + url.split("/dp/")[1].split("/")[0]
+    return url
+
+
 

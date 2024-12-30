@@ -2,14 +2,10 @@ import sqlite3
 import requests
 from bs4 import BeautifulSoup
 import time
-import logging
+from utils import simplify_amazon_url
+from logger import config_logger
 
-# Configuración de logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logger = config_logger()
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
@@ -17,7 +13,7 @@ HEADERS = {
 }
 
 MAX_RETRIES = 3
-RETRY_DELAY = 2  # segundos
+RETRY_DELAY = 5  # segundos
 
 def fetch_with_retries(url: str, headers: dict) -> str:
     """Realiza una solicitud HTTP con reintentos en caso de error."""
@@ -48,6 +44,8 @@ def get_price(url: str) -> str:
         str: El precio del producto como texto. Si no se encuentra, devuelve un mensaje de error.
     """
     try:
+        url = simplify_amazon_url(url)
+        logger.info(f"URL simplificada: {url}")
         logger.info("Obteniendo precio del producto...")
         html = fetch_with_retries(url, HEADERS)
         logger.info("HTML obtenido exitosamente. Procesando datos...")
