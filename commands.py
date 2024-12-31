@@ -68,12 +68,13 @@ async def list_urls(update, context):
         return
 
     # Crear mensaje con productos
-    message = escape_markdown_v2("Productos en seguimiento \n")
-    for index, (url,name, price) in enumerate(products, start=1):
-        escaped_name = escape_markdown_v2(name or "Nombre no disponible")
-        escaped_url = escape_markdown_v2(url or "URL no disponible")
-        escaped_price = escape_markdown_v2(price or "Precio no disponible")
-        message += f"{index} {escaped_name} {escaped_price}\n"
+    message = escape_markdown_v2("Productos en seguimiento:\n")
+    for index, product in enumerate(products, start=1):
+        escaped_name = escape_markdown_v2(product["name"] or "Nombre no disponible")
+        escaped_url = escape_markdown_v2(product["url"] or "URL no disponible")
+        escaped_price = escape_markdown_v2(product["price"] or "Precio no disponible")
+        message += f"{index}. {escaped_name} ({escaped_price})\n"
+
     
     await update.message.reply_text(message, parse_mode="MarkdownV2")
 
