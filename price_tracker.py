@@ -50,29 +50,46 @@ session.mount("http://", adapter)
 def fetch_with_retries(url: str, headers: dict) -> str:
     """Realiza una solicitud HTTP con reintentos en caso de error."""
     for attempt in range(1, MAX_RETRIES + 1):
-        proxy = next(PROXY_POOL)
-        proxies = {
-            "http": proxy,
-            "https": proxy,
-        }
+        proxy_info = next(PROXY_POOL)
+        proxy_type = proxy_info["type"].lower()  # Convertir a minúsculas para compatibilidad
+        proxy_url = proxy_info["url"]
+        
+        # Configurar proxies según tipo
+        if proxy_type in ["http", "https"]:
+            proxies = {
+                "http": proxy_url,
+                "https": proxy_url,
+            }
+        elif proxy_type == "socks5":
+            proxies = {
+                "http": proxy_url,
+                "https": proxy_url,
+            }
+        else:
+            logger.warning(f"Tipo de proxy desconocido: {proxy_type}. Intentando sin proxy.")
+            proxies = {}
+        
         try:
             headers_with_agent = headers.copy()
             headers_with_agent["User-Agent"] = random.choice(USER_AGENTS)
-            logger.info(f"Intentando conectar a Amazon (Intento {attempt}) con proxy: {proxy}...")
+            if proxies:
+                logger.info(f"Intentando conectar a Amazon (Intento {attempt}) con proxy: {proxy_url} ({proxy_type.upper()})...")
+            else:
+                logger.info(f"Intentando conectar a Amazon (Intento {attempt}) sin proxy...")
             response = session.get(url, headers=headers_with_agent, proxies=proxies, timeout=10)
             response.raise_for_status()
             logger.info("Conexión exitosa.")
             return response.text
         except requests.exceptions.ProxyError as e:
-            logger.warning(f"ProxyError con {proxy} (Intento {attempt}): {e}")
+            logger.warning(f"ProxyError con {proxy_url} ({proxy_type.upper()}) (Intento {attempt}): {e}")
         except requests.exceptions.ConnectTimeout as e:
-            logger.warning(f"ConnectTimeout con {proxy} (Intento {attempt}): {e}")
+            logger.warning(f"ConnectTimeout con {proxy_url} ({proxy_type.upper()}) (Intento {attempt}): {e}")
         except requests.exceptions.ReadTimeout as e:
-            logger.warning(f"ReadTimeout con {proxy} (Intento {attempt}): {e}")
+            logger.warning(f"ReadTimeout con {proxy_url} ({proxy_type.upper()}) (Intento {attempt}): {e}")
         except requests.exceptions.HTTPError as e:
-            logger.warning(f"HTTPError con {proxy} (Intento {attempt}): {e}")
+            logger.warning(f"HTTPError con {proxy_url} ({proxy_type.upper()}) (Intento {attempt}): {e}")
         except requests.exceptions.RequestException as e:
-            logger.warning(f"RequestException con {proxy} (Intento {attempt}): {e}")
+            logger.warning(f"RequestException con {proxy_url} ({proxy_type.upper()}) (Intento {attempt}): {e}")
 
         if attempt < MAX_RETRIES:
             delay = random.uniform(*RETRY_DELAY_RANGE)
