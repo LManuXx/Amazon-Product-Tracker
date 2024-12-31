@@ -1,4 +1,3 @@
-import sqlite3
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -85,3 +84,43 @@ def get_product_info(url: str) -> tuple:
     except Exception as e:
         logger.error(f"Error inesperado: {e}")
         return "Error inesperado", str(e)
+
+    
+def get_price(url: str) -> str:
+    """
+    Extrae el precio de un producto en Amazon a partir de su URL.
+
+    Args:
+        url (str): URL de la página del producto.
+
+    Returns:
+        str: El precio del producto como texto. Si no se encuentra, devuelve un mensaje de error.
+    """
+    try:
+        url = simplify_amazon_url(url)
+        logger.info(f"URL simplificada: {url}")
+        logger.info("Obteniendo precio del producto...")
+        html = fetch_with_retries(url, HEADERS)
+        logger.info("HTML obtenido exitosamente. Procesando datos...")
+
+        soup = BeautifulSoup(html, "lxml")
+        
+        # Extraer la parte entera y fraccionaria del precio
+        whole_price = soup.select_one("span.a-price-whole")
+        fractional_price = soup.select_one("span.a-price-fraction")
+        
+        if whole_price and fractional_price:
+            price_whole = whole_price.text.strip().replace(",", "")
+            price_fraction = fractional_price.text.strip()
+            price = f"{price_whole},{price_fraction} €"
+            logger.info(f"Precio encontrado: {price}")
+            return price
+
+        logger.warning("No se encontró el precio en la página.")
+        return "No se pudo encontrar el precio en esta página."
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error al conectar con Amazon: {e}")
+        return f"Error al conectar con Amazon: {e}"
+    except Exception as e:
+        logger.error(f"Error inesperado: {e}")
+        return f"Error inesperado: {e}"
