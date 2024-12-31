@@ -4,6 +4,7 @@ from logger import config_logger
 import os
 from urllib.parse import urlparse
 
+
 logger = config_logger()
 
 # Configuración de la base de datos desde la variable de entorno DATABASE_URL
@@ -88,32 +89,30 @@ def add_user(user_id):
             conn.commit()
 
 @handle_db_errors
-def add_product(user_id, url, name=None, price=None):
-    """
-    Añade un producto y su precio inicial a la base de datos.
+def is_valid_url(url):
+    parsed = urlparse(url)
+    return bool(parsed.netloc) and bool(parsed.scheme)
 
-    Args:
-        user_id (int): ID del usuario propietario del producto.
-        url (str): URL del producto.
-        name (str): Nombre del producto.
-        price (str): Precio del producto.
-    """
+def add_product(user_id, url, name=None, price=None):
+    if not is_valid_url(url):
+        logger.error(f"URL inválida: {url}")
+        return
+
     with get_connection() as conn:
         with conn.cursor() as cursor:
-            # Insertar producto
             cursor.execute("""
             INSERT INTO products (user_id, url, name, price)
             VALUES (%s, %s, %s, %s) RETURNING id
             """, (user_id, url, name, price))
             product_id = cursor.fetchone()["id"]
 
-            # Insertar precio inicial en price_history
             if price:
                 cursor.execute("""
                 INSERT INTO price_history (product_id, price)
                 VALUES (%s, %s)
                 """, (product_id, price))
             conn.commit()
+
 
 @handle_db_errors
 def get_products(user_id):
@@ -147,17 +146,21 @@ def remove_product(user_id, url):
 
 @handle_db_errors
 def record_price_change(product_id, price):
-    """
-    Registra un cambio de precio en la tabla price_history.
+    try:
+        if not isinstance(product_id, int):
+            logger.error(f"ID de producto inválido: {product_id}")
+            return
 
-    Args:
-        product_id (int): ID del producto.
-        price (str): Nuevo precio del producto.
-    """
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO price_history (product_id, price) VALUES (%s, %s)", (product_id, price))
-            conn.commit()
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                INSERT INTO price_history (product_id, price)
+                VALUES (%s, %s)
+                """, (product_id, price))
+                conn.commit()
+    except psycopg2.Error as e:
+        logger.error(f"Error en record_price_change: {e}")
+
 
 @handle_db_errors
 def get_price_history(user_id, url):
@@ -184,26 +187,26 @@ def get_price_history(user_id, url):
 
 @handle_db_errors
 def get_last_price(product_id):
-    """
-    Obtiene el último precio registrado de un producto.
+    try:
+        if not isinstance(product_id, int):
+            logger.error(f"ID de producto inválido: {product_id}")
+            return None
 
-    Args:
-        product_id (int): ID del producto.
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                SELECT price
+                FROM price_history
+                WHERE product_id = %s
+                ORDER BY timestamp DESC
+                LIMIT 1
+                """, (product_id,))
+                result = cursor.fetchone()
+                return result["price"] if result else None
+    except psycopg2.Error as e:
+        logger.error(f"Error en get_last_price: {e}")
+        return None
 
-    Returns:
-        str: Último precio registrado, o None si no hay datos.
-    """
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-            SELECT price
-            FROM price_history
-            WHERE product_id = %s
-            ORDER BY timestamp DESC
-            LIMIT 1
-            """, (product_id,))
-            result = cursor.fetchone()
-            return result["price"] if result else None
 
 @handle_db_errors
 def get_all_products():
