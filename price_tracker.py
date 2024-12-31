@@ -66,15 +66,13 @@ def get_product_info(url: str) -> tuple:
 
         # Extraer nombre del producto
         title_element = soup.find("span", id="productTitle")
-        product_name = title_element.text.strip() if title_element else "Nombre no disponible"
+        product_name = title_element.text.strip() 
 
         # Extraer precio del producto
         whole_price = soup.select_one("span.a-price-whole")
         fractional_price = soup.select_one("span.a-price-fraction")
-        if whole_price and fractional_price:
-            price = f"{whole_price.text.strip().replace(',', '')},{fractional_price.text.strip()} €"
-        else:
-            price = "Precio no disponible"
+        price = f"{whole_price.text.strip().replace(',', '')},{fractional_price.text.strip()} €"
+
 
         logger.info(f"Producto encontrado: {product_name}, Precio: {price}")
         return product_name, price
