@@ -1,5 +1,7 @@
 # proxies.py
 
+import itertools
+
 PROXIES = [
     "http://47.251.122.81:8888",
     "http://89.117.130.19:80",
@@ -22,3 +24,6 @@ PROXIES = [
     "http://104.207.39.4:3128",
     "http://104.207.46.131:3128",
 ]
+
+# Crear un iterador cíclico de proxies
+PROXY_POOL = itertools.cycle(PROXIES)

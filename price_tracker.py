@@ -6,7 +6,9 @@ import time
 import random
 from utils import simplify_amazon_url
 from logger import config_logger
-from proxies import PROXIES  # Importa la lista de proxies
+from proxies import PROXY_POOL  # Importa el iterador de proxies
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = config_logger()
 
@@ -33,38 +35,61 @@ USER_AGENTS = [
 MAX_RETRIES = 5
 RETRY_DELAY_RANGE = (5, 15)  # Tiempos de espera aleatorios entre 5 y 15 segundos
 
+# Configurar la sesión con reintentos
+session = requests.Session()
+retry_strategy = Retry(
+    total=MAX_RETRIES,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["HEAD", "GET", "OPTIONS"],
+    backoff_factor=1,  # Factor de espera exponencial
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+session.mount("https://", adapter)
+session.mount("http://", adapter)
+
 def fetch_with_retries(url: str, headers: dict) -> str:
     """Realiza una solicitud HTTP con reintentos en caso de error."""
-    available_proxies = PROXIES.copy()  # Copia de la lista de proxies
-
-    for attempt in range(MAX_RETRIES):
-        if not available_proxies:
-            logger.error("No hay proxies disponibles para usar.")
-            raise requests.exceptions.ProxyError("No proxies disponibles.")
-        
+    for attempt in range(1, MAX_RETRIES + 1):
+        proxy = next(PROXY_POOL)
+        proxies = {
+            "http": proxy,
+            "https": proxy,
+        }
         try:
             headers_with_agent = headers.copy()
             headers_with_agent["User-Agent"] = random.choice(USER_AGENTS)
-            proxy = random.choice(available_proxies)
-            proxies = {
-                "http": proxy,
-                "https": proxy,
-            }
-
-            logger.info(f"Intentando conectar a Amazon (Intento {attempt + 1}) con proxy: {proxy}...")
-            response = requests.get(url, headers=headers_with_agent, proxies=proxies, timeout=10)
+            logger.info(f"Intentando conectar a Amazon (Intento {attempt}) con proxy: {proxy}...")
+            response = session.get(url, headers=headers_with_agent, proxies=proxies, timeout=10)
             response.raise_for_status()
             logger.info("Conexión exitosa.")
             return response.text
+        except requests.exceptions.ProxyError as e:
+            logger.warning(f"ProxyError con {proxy} (Intento {attempt}): {e}")
+        except requests.exceptions.ConnectTimeout as e:
+            logger.warning(f"ConnectTimeout con {proxy} (Intento {attempt}): {e}")
+        except requests.exceptions.ReadTimeout as e:
+            logger.warning(f"ReadTimeout con {proxy} (Intento {attempt}): {e}")
+        except requests.exceptions.HTTPError as e:
+            logger.warning(f"HTTPError con {proxy} (Intento {attempt}): {e}")
         except requests.exceptions.RequestException as e:
-            logger.warning(f"Error al conectar con proxy {proxy} (Intento {attempt + 1}): {e}")
-            available_proxies.remove(proxy)  # Elimina el proxy que falló
-            if attempt < MAX_RETRIES - 1:
-                delay = random.uniform(*RETRY_DELAY_RANGE)
-                logger.info(f"Reintentando en {delay:.2f} segundos con otro proxy...")
-                time.sleep(delay)
-            else:
-                logger.error("Máximo número de intentos alcanzado. Fallo de conexión con todos los proxies.")
+            logger.warning(f"RequestException con {proxy} (Intento {attempt}): {e}")
+
+        if attempt < MAX_RETRIES:
+            delay = random.uniform(*RETRY_DELAY_RANGE)
+            logger.info(f"Reintentando en {delay:.2f} segundos con otro proxy...")
+            time.sleep(delay)
+        else:
+            logger.error("Máximo número de intentos alcanzado con proxies. Intentando sin proxy...")
+            try:
+                headers_with_agent = headers.copy()
+                headers_with_agent["User-Agent"] = random.choice(USER_AGENTS)
+                logger.info(f"Intentando conectar a Amazon sin proxy (Intento final)...")
+                response = session.get(url, headers=headers_with_agent, timeout=10)
+                response.raise_for_status()
+                logger.info("Conexión exitosa sin proxy.")
+                return response.text
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error al conectar con Amazon sin proxy: {e}")
                 raise e
 
 def get_product_info(url: str) -> tuple:
