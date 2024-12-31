@@ -107,15 +107,18 @@ async def remove_url(update, context):
             await update.message.reply_text(escape_markdown_v2("⚠️ El número proporcionado no es válido. Usa /list para ver tus productos."), parse_mode="MarkdownV2")
             return
 
-        product_index = int(product_index)
-        url_to_remove = products[product_index+1][0]
+        product_index = int(product_index) - 1  # Ajustar para índice 0
+        url_to_remove = products[product_index]['url']  # Acceder correctamente
+
         remove_product(user_id, url_to_remove)
 
-        message = f"✅ El producto '{products[product_index][1]}' ha sido eliminado del seguimiento."
+        message = f"✅ El producto '{products[product_index]['name']}' ha sido eliminado del seguimiento."
 
         await update.message.reply_text(escape_markdown_v2(message), parse_mode="MarkdownV2")
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error en remove_url: {e}")
         await update.message.reply_text(escape_markdown_v2("⚠️ Ocurrió un error. Inténtalo de nuevo más tarde."), parse_mode="MarkdownV2")
+
 
 async def show_history(update, context):
     if not context.args or len(context.args) == 0:
