@@ -73,7 +73,7 @@ async def list_urls(update, context):
         escaped_name = escape_markdown_v2(product["name"] or "Nombre no disponible")
         escaped_url = escape_markdown_v2(product["url"] or "URL no disponible")
         escaped_price = escape_markdown_v2(product["price"] or "Precio no disponible")
-        message += f"{index}. {escaped_name} ({escaped_price})\n"
+        message += f"{index} {escaped_name} {escaped_price}\n"
 
     
     await update.message.reply_text(message, parse_mode="MarkdownV2")
