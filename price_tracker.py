@@ -53,14 +53,9 @@ def fetch_with_retries(url: str, headers: dict) -> str:
         proxy_info = next(PROXY_POOL)
         proxy_type = proxy_info["type"].lower()  # Convertir a minúsculas para compatibilidad
         proxy_url = proxy_info["url"]
-        
-        # Configurar proxies según tipo
-        if proxy_type in ["http", "https"]:
-            proxies = {
-                "http": proxy_url,
-                "https": proxy_url,
-            }
-        elif proxy_type == "socks5":
+
+        # Configurar proxies según tipo (solo HTTPS en este caso)
+        if proxy_type == "https":
             proxies = {
                 "http": proxy_url,
                 "https": proxy_url,
@@ -68,14 +63,19 @@ def fetch_with_retries(url: str, headers: dict) -> str:
         else:
             logger.warning(f"Tipo de proxy desconocido: {proxy_type}. Intentando sin proxy.")
             proxies = {}
-        
+
         try:
             headers_with_agent = headers.copy()
             headers_with_agent["User-Agent"] = random.choice(USER_AGENTS)
+            
             if proxies:
                 logger.info(f"Intentando conectar a Amazon (Intento {attempt}) con proxy: {proxy_url} ({proxy_type.upper()})...")
             else:
                 logger.info(f"Intentando conectar a Amazon (Intento {attempt}) sin proxy...")
+
+            # Agregar logging para la URL
+            logger.debug(f"URL que se va a solicitar: {url}")
+
             response = session.get(url, headers=headers_with_agent, proxies=proxies, timeout=10)
             response.raise_for_status()
             logger.info("Conexión exitosa.")

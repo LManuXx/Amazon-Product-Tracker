@@ -29,5 +29,4 @@ soupsieve==2.6
 urllib3==2.3.0
 yarg==0.1.10
 psycopg2==2.9.6
-
-
+PySocks==1.7.1
